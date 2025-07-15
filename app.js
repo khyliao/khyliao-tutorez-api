@@ -8,14 +8,14 @@ const {
   getTutorsFromUsers,
   getTutorLoginsFromUsers,
 } = require("./tutors/index");
-const { makeInvoice } = require("./index");
+const { makeInvoice } = require("./payments/index");
 
 const app = express();
 const port = process.env.PORT || 3004;
 
 app.use(cors());
 const job = new CronJob(
-  "0і * * * *",
+  "* * * * * *",
 
   async () => {
     console.log("Running scheduled task ");
@@ -27,7 +27,8 @@ const job = new CronJob(
       await saveTutorsInFile(tutorLogins);
 
       const invoice = makeInvoice(users);
-      await writeToPayments(invoice);
+      console.log(invoice);
+      // await writeToPayments(invoice);
     } catch (error) {
       console.error("Error in cronjob:", error);
     }

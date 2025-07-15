@@ -2,8 +2,8 @@ const {
   getCurrentDateWithHours,
   getCurrentDateParts,
   getCurrentMonthAndYear,
-} = require("./utils/date.js");
-const { IGNORED_USERS } = require("./constants/ignoredUsers.js");
+} = require("../utils/date.js");
+const { IGNORED_USERS } = require("../constants/ignoredUsers.js");
 
 const makeInvoice = (users, currentMonth = getCurrentDateParts().month) => {
   const currentDate = getCurrentDateWithHours();
