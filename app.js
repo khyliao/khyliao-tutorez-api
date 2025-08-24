@@ -8,6 +8,8 @@ const {
   getTutorsFromUsers,
   getTutorLoginsFromUsers,
 } = require("./tutors/index");
+const { getCurrentMonthAndYear } = require("./utils/date");
+const { getCurrentPayment } = require("./firebase/index");
 const { makeInvoice } = require("./payments/index");
 
 const app = express();
@@ -15,7 +17,7 @@ const port = process.env.PORT || 3004;
 
 app.use(cors());
 const job = new CronJob(
-  "* * * * * *",
+  "0 * * * *",
 
   async () => {
     console.log("Running scheduled task ");
@@ -26,9 +28,12 @@ const job = new CronJob(
       const tutorLogins = getTutorLoginsFromUsers(getTutorsFromUsers(users));
       await saveTutorsInFile(tutorLogins);
 
-      const invoice = makeInvoice(users);
+      const currentMonthAndYear = getCurrentMonthAndYear();
+
+      const currentPayment = await getCurrentPayment(currentMonthAndYear);
+      const invoice = makeInvoice(users, currentPayment, currentMonthAndYear);
       console.log(invoice);
-      // await writeToPayments(invoice);
+      await writeToPayments(invoice);
     } catch (error) {
       console.error("Error in cronjob:", error);
     }

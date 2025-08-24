@@ -5,7 +5,7 @@ const {
 } = require("../utils/date.js");
 const { IGNORED_USERS } = require("../constants/ignoredUsers.js");
 
-const makeInvoice = (users, currentMonth = getCurrentDateParts().month) => {
+const makeInvoice = (users, currentPayment, currentMonthAndYear) => {
   const currentDate = getCurrentDateWithHours();
 
   const usersList = Object.values(users);
@@ -17,30 +17,44 @@ const makeInvoice = (users, currentMonth = getCurrentDateParts().month) => {
         //   return userInvoice;
         // }
         if (!userInvoice.info[user.tutor]) {
+          console.log(user.tutor);
           userInvoice.info[user.tutor] = {
             amount: 0,
-            paid: false,
+            totalPaidAmount:
+              currentPayment.info[user.tutor]?.totalPaidAmount || 0,
             totalHours: 0,
-            averageLessonCost: 0,
           };
         }
+
+        const tutorOfThisStudent = usersList.find(
+          ({ login }) => user.tutor === login
+        );
+
+        if (!tutorOfThisStudent) return userInvoice;
+
+        const tutorPrice = tutorOfThisStudent.tutorPriceByDefault || 0;
+
         const totalLessonsPaymentAmount =
           user.lessons?.reduce((total, lesson) => {
-            if (lesson.date.split(".")[1] === currentMonth) {
-              userInvoice.info[user.tutor].totalHours += 1;
-              return total + lesson.price * lesson.duration;
+            if (lesson.date.split(".")[1] === getCurrentDateParts().month) {
+              userInvoice.info[user.tutor].totalHours += lesson.duration;
+              return total + user.price * lesson.duration;
             }
             return total;
           }, 0) || 0;
 
-        userInvoice.info[user.tutor].averageLessonCost =
-          +(
-            userInvoice.info[user.tutor].amount /
-            userInvoice.info[user.tutor].totalHours
-          ).toFixed(2) || 0;
+        // console.log(totalLessonsPaymentAmount);
+
+        // userInvoice.info[user.tutor].averageLessonCost =
+        //   +(
+        //     userInvoice.info[user.tutor].amount /
+        //     userInvoice.info[user.tutor].totalHours
+        //   ).toFixed(2) || 0;
 
         userInvoice.info[user.tutor].amount += totalLessonsPaymentAmount;
-        userInvoice.income += totalLessonsPaymentAmount;
+        if (user.tutor !== "khilyao") {
+          userInvoice.income += totalLessonsPaymentAmount;
+        }
 
         return userInvoice;
       },
@@ -49,25 +63,18 @@ const makeInvoice = (users, currentMonth = getCurrentDateParts().month) => {
         info: {},
         income: 0,
         commision: 0,
-        id: getCurrentMonthAndYear(),
+        id: currentMonthAndYear,
       }
     );
 
   usersList
     .filter(({ role }) => role === "tutor")
-    .map(({ login, percentage }) => {
-      invoice.info[login].percentage = percentage;
-
-      const commision = percentage * invoice.info[login].amount;
+    .map(({ login, tutorPriceByDefault }) => {
+      const commision = invoice.info[login].totalHours * tutorPriceByDefault;
       invoice.info[login].commision = Math.round(commision);
 
       invoice.commision += commision;
     });
-
-  invoice.averagePercentage = +(
-    (invoice.commision * 100) /
-    invoice.income
-  ).toFixed(2);
 
   return invoice;
 };

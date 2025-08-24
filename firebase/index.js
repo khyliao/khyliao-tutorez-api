@@ -15,10 +15,16 @@ async function getUsers() {
   return snapshot.val();
 }
 
+async function getCurrentPayment(monthAndYear) {
+  const ref = db.ref(`payments/${monthAndYear}`);
+  const snapshot = await ref.once("value");
+  return snapshot.val();
+}
+
 async function writeToPayments(invoice) {
   const ref = db.ref(`payments/${invoice.id}`);
 
   await ref.update(invoice);
 }
 
-module.exports = { db, getUsers, writeToPayments };
+module.exports = { db, getUsers, writeToPayments, getCurrentPayment };
